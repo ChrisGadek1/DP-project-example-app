@@ -5,6 +5,7 @@ SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne d
 2===========================================2
 SomeProtectedClass2{id=1, someValue='wazne dane21', someOtherValue='inne wazne dane'}
 SomeProtectedClass2{id=2, someValue='wazne dane22', someOtherValue='inne wazne dane'}
+SomeProtectedClass2{id=3, someValue='valuable things', someOtherValue='other valuable things'}
 3===========================================3
 Insert Denied
 4===========================================4
