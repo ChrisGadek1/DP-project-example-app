@@ -1,0 +1,21 @@
+{
+  "name": "RolesForUser",
+  "data": [
+    {
+      "id": "1",
+      "role": "admin"
+    },
+    {
+      "id": "4",
+      "role": "ksiegowy"
+    },
+    {
+      "id": "7",
+      "role": "tester"
+    },
+    {
+      "id": "10",
+      "role": "hacker"
+    }
+  ]
+}

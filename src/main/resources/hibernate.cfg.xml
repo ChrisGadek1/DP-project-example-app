@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+  <session-factory>
+    <property name="connection.url">jdbc:derby://127.0.0.1/testProject;create=true </property>
+    <property name="connection.driver_class">org.apache.derby.jdbc.ClientDriver</property>
+    <property name="dialect">org.hibernate.dialect.DerbyDialect</property>
+    <!-- <property name="connection.username"/> -->
+    <!-- <property name="connection.password"/> -->
+
+    <!-- DB schema will be updated if needed -->
+    <property name="hibernate.hbm2ddl.auto">create-drop</property>
+    <property name="show_sql">true</property>
+    <property name="format_sql">true</property>
+    <mapping class="org.safety.library.models.DefaultPrivilige"></mapping>
+    <mapping class="org.safety.library.models.TestModel"></mapping>
+    <mapping class="org.safety.library.models.Role"></mapping>
+    <mapping class="org.safety.library.models.AccessListRow"></mapping>
+    <mapping class="org.safety.library.models.HibernateSelect"></mapping>
+    <mapping class="org.safety.library.models.UsersRole"></mapping>
+    <mapping class="org.safety.library.models.AddPrivilege"></mapping>
+    <mapping class="protectedClass.SomeProtectedClass1"></mapping>
+    <mapping class="protectedClass.OtherProtectedClass"></mapping>
+    <mapping class="unprotectedClass.UnprotectedClass"></mapping>
+    <mapping class="users.TestUsers"></mapping>
+  </session-factory>
+</hibernate-configuration>

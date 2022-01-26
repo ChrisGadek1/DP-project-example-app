@@ -1,0 +1,63 @@
+{
+  "name": "SomeProtectedClass1",
+  "data": [
+    {
+      "id": "1",
+      "allowedRoles": [
+        {
+          "name": "admin",
+          "canRead": true,
+          "canUpdate": true,
+          "canDelete": true
+        },
+        {
+          "name": "ksiegowy",
+          "canRead": true,
+          "canUpdate": false,
+          "canDelete": false
+        },
+        {
+          "name": "tester",
+          "canRead": true,
+          "canUpdate": true,
+          "canDelete": false
+        },
+        {
+          "name": "hacker",
+          "canRead": false,
+          "canUpdate": false,
+          "canDelete": false
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "allowedRoles": [
+        {
+          "name": "admin",
+          "canRead": true,
+          "canUpdate": true,
+          "canDelete": false
+        },
+        {
+          "name": "ksiegowy",
+          "canRead": true,
+          "canUpdate": false,
+          "canDelete": true
+        },
+        {
+          "name": "tester",
+          "canRead": true,
+          "canUpdate": true,
+          "canDelete": true
+        },
+        {
+          "name": "hacker",
+          "canRead": true,
+          "canUpdate": true,
+          "canDelete": true
+        }
+      ]
+    }
+  ]
+}
