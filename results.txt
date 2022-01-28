@@ -3,17 +3,20 @@ SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne d
 1===========================================1
 SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne dane'}
 2===========================================2
+SomeProtectedClass1{id=1, someValue='wazne dane11', someOtherValue='inne wazne dane'}
+SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne dane'}
+3===========================================3
 SomeProtectedClass2{id=1, someValue='wazne dane21', someOtherValue='inne wazne dane'}
 SomeProtectedClass2{id=2, someValue='wazne dane22', someOtherValue='inne wazne dane'}
 SomeProtectedClass2{id=3, someValue='valuable things', someOtherValue='other valuable things'}
-3===========================================3
-Insert Denied
 4===========================================4
-Delete Denied
+Insert Denied
 5===========================================5
-SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne dane'}
+Delete Denied
 6===========================================6
-Update Denied
+SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='inne wazne dane'}
 7===========================================7
-SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='haha I changed it'}
+Update Denied
 8===========================================8
+SomeProtectedClass1{id=2, someValue='wazne dane12', someOtherValue='haha I changed it'}
+9===========================================9

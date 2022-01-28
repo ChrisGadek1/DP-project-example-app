@@ -1,12 +1,7 @@
 package users;
 
-import org.safety.library.annotations.Users;
-
 import javax.persistence.*;
 
-@Users(rolesListJsonPath = "RolesList.json",
-        entityAccessJsonPath = "EntityAccess.json",
-        rolesForUsersJsonPath = "RolesForUsers.json")
 @Entity
 public class TestUsers {
     @Id
