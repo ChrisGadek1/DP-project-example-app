@@ -4,69 +4,22 @@
     {
       "role": "admin",
       "privilages" : [
-      {
-        "entityName": "SomeProtectedClass1",
-        "canRead": "true",
-        "canUpdate": "true",
-        "canDelete": "true"
-      },
-        {
-          "entityName": "OtherProtectedClass",
-          "canRead": "true",
-          "canUpdate": "true",
-          "canDelete": "true"
-        }
       ]
     },
     {
       "role": "ksiegowy",
       "privilages" : [
-        {
-          "entityName": "SomeProtectedClass1",
-          "canRead": "true",
-          "canUpdate": "false",
-          "canDelete": "false"
-        },
-        {
-          "entityName": "OtherProtectedClass",
-          "canRead": "true",
-          "canUpdate": "false",
-          "canDelete": "false"
-        }
       ]
     },
     {
       "role": "tester",
       "privilages" : [
-        {
-          "entityName": "SomeProtectedClass1",
-          "canRead": "true",
-          "canUpdate": "true",
-          "canDelete": "false"
-        },
-        {
-          "entityName": "OtherProtectedClass",
-          "canRead": "true",
-          "canUpdate": "true",
-          "canDelete": "false"
-        }
       ]
     },
     {
       "role": "hacker",
       "privilages" : [
-        {
-          "entityName": "SomeProtectedClass1",
-          "canRead": "true",
-          "canUpdate": "true",
-          "canDelete": "true"
-        },
-        {
-          "entityName": "OtherProtectedClass",
-          "canRead": "false",
-          "canUpdate": "false",
-          "canDelete": "false"
-        }
+
       ]
     }
   ]
