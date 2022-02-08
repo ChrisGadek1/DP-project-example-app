@@ -1,20 +1,21 @@
 
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.safety.library.annotations.ACL;
 import org.safety.library.hibernate.SessionProvider;
-import org.safety.library.initializationModule.Initializer;
+import org.safety.library.initializationModule.abstractMappingObjects.EntityAccess;
 import org.safety.library.initializationModule.utils.Authenticator;
+import org.safety.library.models.AddPrivilege;
+import org.safety.library.models.HibernateSelect;
+import org.safety.library.models.Role;
+import org.safety.library.models.UsersRole;
 import protectedClass.OtherProtectedClass;
 import protectedClass.SomeProtectedClass1;
 import unprotectedClass.UnprotectedClass;
 import users.TestUsers;
 
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.*;
+import java.lang.reflect.Field;
 import java.util.List;
 
 public class Main {
@@ -59,196 +60,128 @@ public class Main {
 
     public static void main(String args[]) throws Exception {
         Session session = SessionProvider.getSession();
+        if(!SessionProvider.getSession().getTransaction().isActive()){
+            SessionProvider.getSession().beginTransaction();
+        }
 
-        //Preparation for application use
-        session.beginTransaction();
-        session.createQuery("DELETE FROM SomeProtectedClass1").executeUpdate();
-        session.createQuery("DELETE FROM OtherProtectedClass ").executeUpdate();
-        session.createQuery("DELETE FROM TestUsers ").executeUpdate();
-        TestUsers userWithRoleAdmin = new TestUsers((long) 1, "Janek Admin");
-        TestUsers userWithRoleKsiegowy = new TestUsers((long) 4, "Zosia ksiegowa");
-        TestUsers userWithRoleTester = new TestUsers((long) 7, "Kacper tester");
-        TestUsers userWithRoleHacker = new TestUsers((long) 10, "Anna hacker");
-        SomeProtectedClass1 someProtectedClass11 = new SomeProtectedClass1("wazne dane11", "inne wazne dane", (long) 1);
-        SomeProtectedClass1 someProtectedClass12 = new SomeProtectedClass1("wazne dane12", "inne wazne dane", (long) 2);
-        OtherProtectedClass otherProtectedClass1 = new OtherProtectedClass("wazne dane21", "inne wazne dane", (long) 1);
-        OtherProtectedClass otherProtectedClass2 = new OtherProtectedClass("wazne dane22", "inne wazne dane", (long) 2);
-        UnprotectedClass unprotectedClass1 = new UnprotectedClass("nieważne dane1", "inne nieważne dane", (long)1);
-        UnprotectedClass unprotectedClass2 = new UnprotectedClass("nieważne dane2", "inne nieważne dane", (long)1);
-        session.save(userWithRoleAdmin);
-        session.save(userWithRoleKsiegowy);
-        session.save(userWithRoleTester);
-        session.save(userWithRoleHacker);
-        session.save(someProtectedClass11);
-        session.save(someProtectedClass12);
-        session.save(otherProtectedClass1);
-        session.save(otherProtectedClass2);
-        session.save(unprotectedClass1);
-        session.save(unprotectedClass2);
+        TestUsers tomek = new TestUsers((long) 1, "tomek");
+        TestUsers ada = new TestUsers((long) 2, "ada");
+        TestUsers kasia = new TestUsers((long) 3, "kasia");
+
+        session.save(tomek);
+        session.save(ada);
+        session.save(kasia);
+
+        Role admin = new Role("admin");
+        Role pracownik = new Role("pracownik");
+
+        session.save(admin);
+        session.save(pracownik);
+
+        UsersRole tomekAdmin = new UsersRole(Math.toIntExact(tomek.getId()), admin);
+        UsersRole adaPracownik = new UsersRole(Math.toIntExact(ada.getId()), pracownik);
+        UsersRole kasiaPracownik = new UsersRole(Math.toIntExact(kasia.getId()), pracownik);
+
+        session.save(tomekAdmin);
+        session.save(adaPracownik);
+        session.save(kasiaPracownik);
+
+        AddPrivilege tomekAccess1 = new AddPrivilege(admin, "SomeProtectClass1");
+        AddPrivilege tomekAccess2 = new AddPrivilege(admin, "OtherProtectedClass");
+
+        session.save(tomekAccess1);
+        session.save(tomekAccess2);
+
+        HibernateSelect table1 = new HibernateSelect("someprotec0_", "SomeProtectedClass1");
+        HibernateSelect table2 = new HibernateSelect("otherprote0_", "OtherProtectedClass");
+
+        session.save(table1);
+        session.save(table2);
+
         session.getTransaction().commit();
 
-        BufferedWriter writer = new BufferedWriter(new FileWriter("results.txt"));
+
+        while(true){
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+            System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia)");
+            int userId = Integer.parseInt(reader.readLine());
+            Authenticator.getInstance().setUserId(userId);
+
+            System.out.println("Use ACL? (true/false)");
+            boolean withAcl = Boolean.parseBoolean(reader.readLine());
+
+            System.out.println("Is insert?: ");
+            boolean insert = Boolean.parseBoolean(reader.readLine());
+
+            System.out.println("Entity name: (1 - SomeProtectClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass)");
+            String entity = reader.readLine();
+
+            Object o = null;
+            if(insert) {
+                while (true) {
+                    try {
+                        if (entity.equalsIgnoreCase("1")) {
+                            System.out.println("protectedClass.SomeProtectClass1 (Long : id, String : someValue, String : someOtherValue)");
+                            String data = reader.readLine();
+                            o = new SomeProtectedClass1(
+                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                        }
+
+                        if (entity.equalsIgnoreCase("2")) {
+                            System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+                            String data = reader.readLine();
+                            o = new OtherProtectedClass(
+                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                        }
+
+                        if (entity.equalsIgnoreCase("3")) {
+                            System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
+                            String data = reader.readLine();
+                            o = new UnprotectedClass(
+                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                        }
+                    }
+                    catch (Exception e){
+                        System.out.println("Try again!");
+                        continue;
+                    }
+                    break;
+                }
+
+                if(withAcl){
+                    safelyInsert(o);
+                }
+                else{
+                    if(!SessionProvider.getSession().getTransaction().isActive()){
+                        SessionProvider.getSession().beginTransaction();
+                    }
+                    SessionProvider.getSession().save(o);
+                    SessionProvider.getSession().getTransaction().commit();
+                }
 
 
 
-        //Initialization of safety Library
-        Initializer initializer = new Initializer();
-        initializer.initialize();
+//                String[] value = new String[Class.forName(entity).getDeclaredFields().length];
+//                Class[] typeClass = new Class[Class.forName(entity).getDeclaredFields().length];
+//                for (int i = 0; i < Class.forName(entity).getDeclaredFields().length; i++) {
+//                    System.out.print(Class.forName(entity).getDeclaredFields()[i].getName() + "(" +
+//                            Class.forName(entity).getDeclaredFields()[i].getType() + ") : ");
+//
+//                    value[i] = reader.readLine();
+//                    typeClass[i] = Class.forName(entity).getDeclaredFields()[i].getType();
+//
+//                }
+//
+//                Object o = Class.forName(entity).getConstructor().newInstance();
 
-        //Selection of protected Data
-        //Let assume our user has role "ksiegowy". Lets try to access some protected data
-        //userWithRoleKsiegowy has role "ksiegowy"
-
-        Authenticator.getInstance().setUserId(userWithRoleKsiegowy.getId());
-        List<SomeProtectedClass1> selectedData = safeLySelectSomeProtectedClass1();
-        selectedData.forEach(s -> {
-            try {
-                writer.write(s.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        });
-        writer.write("1===========================================1\n");
-
-        // This role can access all rows in the database table
-        // Let's try with role "hacker". User with this role doesn't have permission to read row with id = 2 in the SomeProtectedClass1 entity
 
 
-        Authenticator.getInstance().setUserId(userWithRoleHacker.getId());
-        selectedData = safeLySelectSomeProtectedClass1();
-        selectedData.forEach(s -> {
-            try {
-                writer.write(s.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        writer.write("2===========================================2\n");
 
-        //As we can see, this user has access only to the row with id = 2, because of configuration file DataAccess1.json
+            System.out.println();
 
-        //Without @ACL annotation, the hibernate interceptor isn't invoked, so now let's try to get all rows despite lack of permissions
 
-        selectedData = SessionProvider.getSession().createQuery("FROM SomeProtectedClass1 ").getResultList();
-        selectedData.forEach(s -> {
-            try {
-                writer.write(s.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        writer.write("3===========================================3\n");
-
-        //Now lets try to save something.
-        //First, create a new Protected object
-
-        OtherProtectedClass protectedObject = new OtherProtectedClass("valuable things", "other valuable things", (long)3);
-
-        //Let's Assume that our user has role "admin". This role has access to the create operation on OtherProtectedClass entity
-        //And try to save this object
-
-        Authenticator.getInstance().setUserId(userWithRoleAdmin.getId());
-        safelyInsert(protectedObject);
-
-        session.createQuery("FROM OtherProtectedClass ").getResultList().forEach(res -> {
-            try {
-                writer.write(res.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        writer.write("4===========================================4\n");
-
-        //As we can see, this role can add entities to the database (and has permission to read this new added field ;)).
-        //Now let's try with user with role "ksiegowy". This Role doesn't have permission to add rows to the table of OtherProtectedClass entity
-
-        Authenticator.getInstance().setUserId(userWithRoleKsiegowy.getId());
-        OtherProtectedClass protectedObject1 = new OtherProtectedClass("valuable things1", "other valuable thing1", (long)4);
-        try{
-            safelyInsert(protectedObject1);
         }
-        catch (Exception e){
-            writer.write(e.getMessage()+"\n");
-            writer.write("5===========================================5\n");
-        }
-
-        //As we can see, our application has thrown an exception, because this role doesn't have permission to add data to this table.
-        //Now let's try with deleting. Assume we have a user, that doesn't have permission to delete some rows from database and tries to do it
-        //Role "tester" doesn't have permission to delete row with id = 1 from SomeProtectedClass1 entity tester
-
-        Authenticator.getInstance().setUserId(userWithRoleTester.getId());
-        List<SomeProtectedClass1> dataToDelete = session.createQuery("FROM SomeProtectedClass1 S where id = "+(long)1).getResultList();
-        try{
-            safelyDelete(dataToDelete.get(0));
-        }
-        catch (Exception e){
-            writer.write(e.getMessage()+"\n");
-            writer.write("6===========================================6\n");
-        }
-
-
-        //As expected, when the user tries to delete this row, an exception is being thrown.
-        //But... role "admin" has permission to delete this row, so lets try it again!
-        //First, switch to the "admin" user:
-
-        Authenticator.getInstance().setUserId(userWithRoleAdmin.getId());
-
-        dataToDelete = session.createQuery("FROM SomeProtectedClass1 S where id = "+(long)1).getResultList();
-        safelyDelete(dataToDelete.get(0));
-
-        dataToDelete = session.createQuery("FROM SomeProtectedClass1").getResultList();
-
-        dataToDelete.forEach(data -> {
-            try {
-                writer.write(data.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        writer.write("7===========================================7\n");
-
-        //As we can see, no exception is thrown and the row with id = 1 is deleted from database!
-        //So... the last operation from the CRUD set is Update. Like in the previous cases, first let's try to update row with user without permissions to do it.
-        //The role "ksiegowy" doesn't have permissions to update row with id = 2 in the SomeProtectedClass1 entity. Let's try to update it:
-
-        Authenticator.getInstance().setUserId(userWithRoleKsiegowy.getId());
-
-        List<SomeProtectedClass1> dataToUpdate = session.createQuery("FROM SomeProtectedClass1  S where S.id = "+(long)2).getResultList();
-
-        dataToUpdate.get(0).setSomeOtherValue("haha I changed it");
-
-        try{
-            safelyUpdate(dataToUpdate.get(0));
-        }
-        catch (Exception e){
-            writer.write(e.getMessage()+"\n");
-            writer.write("8===========================================8\n");
-        }
-
-        //As expected, this user couldn't update this entity in the database.
-        //We know the role "tester" can update this entity, so let's switch to this role and try again
-
-        Authenticator.getInstance().setUserId(userWithRoleTester.getId());
-
-        dataToUpdate = session.createQuery("FROM SomeProtectedClass1  S where S.id = "+(long)2).getResultList();
-
-        dataToUpdate.get(0).setSomeOtherValue("haha I changed it");
-        safelyUpdate(dataToUpdate.get(0));
-
-        dataToUpdate = session.createQuery("FROM SomeProtectedClass1  S where S.id = "+(long)2).getResultList();
-        dataToUpdate.forEach(s -> {
-            try {
-                writer.write(s.toString()+"\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
-        writer.write("9===========================================9\n");
-
-        writer.close();
-
     }
 }

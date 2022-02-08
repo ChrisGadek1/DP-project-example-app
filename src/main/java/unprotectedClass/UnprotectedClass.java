@@ -3,7 +3,6 @@ package unprotectedClass;
 import javax.persistence.*;
 
 @Entity
-
 public class UnprotectedClass {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
