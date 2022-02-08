@@ -86,7 +86,7 @@ public class Main {
         session.save(adaPracownik);
         session.save(kasiaPracownik);
 
-        AddPrivilege tomekAccess1 = new AddPrivilege(admin, "SomeProtectClass1");
+        AddPrivilege tomekAccess1 = new AddPrivilege(admin, "SomeProtectedClass1");
         AddPrivilege tomekAccess2 = new AddPrivilege(admin, "OtherProtectedClass");
 
         session.save(tomekAccess1);
@@ -108,21 +108,34 @@ public class Main {
             int userId = Integer.parseInt(reader.readLine());
             Authenticator.getInstance().setUserId(userId);
 
+
             System.out.println("Use ACL? (true/false)");
-            boolean withAcl = Boolean.parseBoolean(reader.readLine());
+            String string = reader.readLine();
+            boolean withAcl;
+            while(!string.equalsIgnoreCase("true") && !string.equalsIgnoreCase("false")) {
+                System.out.println("Popraw wartość: ");
+                string = reader.readLine();
+            }
+            withAcl = Boolean.parseBoolean(string);
 
-            System.out.println("Is insert?: ");
-            boolean insert = Boolean.parseBoolean(reader.readLine());
+            System.out.println("Specify operation?: (INSERT, SELECT, UPDATE, DELETE)");
+            String operation = reader.readLine();
+            while(!operation.equalsIgnoreCase("insert") && !operation.equalsIgnoreCase("select")
+                && !operation.equalsIgnoreCase("update") && !operation.equalsIgnoreCase("delete")) {
+                System.out.println("Popraw wartość: ");
+                operation = reader.readLine();
+            }
 
-            System.out.println("Entity name: (1 - SomeProtectClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass)");
+
+            System.out.println("Entity name: (1 - SomeProtectedClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass)");
             String entity = reader.readLine();
 
             Object o = null;
-            if(insert) {
+            if(operation.equalsIgnoreCase("insert")) {
                 while (true) {
                     try {
                         if (entity.equalsIgnoreCase("1")) {
-                            System.out.println("protectedClass.SomeProtectClass1 (Long : id, String : someValue, String : someOtherValue)");
+                            System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
                             o = new SomeProtectedClass1(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
@@ -150,7 +163,11 @@ public class Main {
                 }
 
                 if(withAcl){
-                    safelyInsert(o);
+                    try {
+                        safelyInsert(o);
+                    } catch (RuntimeException e) {
+                        System.err.println("Access denied");
+                    }
                 }
                 else{
                     if(!SessionProvider.getSession().getTransaction().isActive()){
@@ -161,26 +178,9 @@ public class Main {
                 }
 
 
-
-//                String[] value = new String[Class.forName(entity).getDeclaredFields().length];
-//                Class[] typeClass = new Class[Class.forName(entity).getDeclaredFields().length];
-//                for (int i = 0; i < Class.forName(entity).getDeclaredFields().length; i++) {
-//                    System.out.print(Class.forName(entity).getDeclaredFields()[i].getName() + "(" +
-//                            Class.forName(entity).getDeclaredFields()[i].getType() + ") : ");
-//
-//                    value[i] = reader.readLine();
-//                    typeClass[i] = Class.forName(entity).getDeclaredFields()[i].getType();
-//
-//                }
-//
-//                Object o = Class.forName(entity).getConstructor().newInstance();
-
             }
 
-
-
             System.out.println();
-
 
         }
     }
