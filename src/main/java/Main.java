@@ -57,6 +57,11 @@ public class Main {
         SessionProvider.getSession().getTransaction().commit();
     }
 
+    @ACL
+    public static List<SomeProtectedClass1> selectJoin1() {
+       return SessionProvider.getSession().createQuery("select s from SomeProtectedClass1 s inner join s.someOtherValue").getResultList();
+    }
+
 
     public static void main(String args[]) throws Exception {
         Session session = SessionProvider.getSession();
@@ -94,6 +99,9 @@ public class Main {
 
         HibernateSelect table1 = new HibernateSelect("someprotec0_", "SomeProtectedClass1");
         HibernateSelect table2 = new HibernateSelect("otherprote0_", "OtherProtectedClass");
+
+        OtherProtectedClass otherProtectedClass = new OtherProtectedClass("Some", "Value", (long) 1);
+        session.save(otherProtectedClass);
 
         session.save(table1);
         session.save(table2);
@@ -138,7 +146,7 @@ public class Main {
                             System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
                             o = new SomeProtectedClass1(
-                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]), otherProtectedClass);
                         }
 
                         if (entity.equalsIgnoreCase("2")) {
@@ -166,7 +174,7 @@ public class Main {
                     try {
                         safelyInsert(o);
                     } catch (RuntimeException e) {
-                        System.err.println("Access denied");
+                        e.printStackTrace();
                     }
                 }
                 else{
@@ -176,8 +184,39 @@ public class Main {
                     SessionProvider.getSession().save(o);
                     SessionProvider.getSession().getTransaction().commit();
                 }
+            } else if(operation.equalsIgnoreCase("select")) {
+
+                    if (entity.equalsIgnoreCase("1")) {
+                       List<SomeProtectedClass1> list = selectJoin1();
+                    }
+
+                    if (entity.equalsIgnoreCase("2")) {
+                        System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+
+                    }
+
+                    if (entity.equalsIgnoreCase("3")) {
+                        System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
+                        String data = reader.readLine();
+
+                    }
 
 
+
+                if(withAcl){
+                    try {
+                        safelyInsert(o);
+                    } catch (RuntimeException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else{
+                    if(!SessionProvider.getSession().getTransaction().isActive()){
+                        SessionProvider.getSession().beginTransaction();
+                    }
+                    SessionProvider.getSession().save(o);
+                    SessionProvider.getSession().getTransaction().commit();
+                }
             }
 
             System.out.println();

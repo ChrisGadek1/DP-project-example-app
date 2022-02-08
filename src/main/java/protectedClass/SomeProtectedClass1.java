@@ -13,6 +13,10 @@ public class SomeProtectedClass1 {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @OneToOne
+    @JoinColumn(name = "ID_other", nullable = false)
+    private OtherProtectedClass otherProtectedClass;
+
     public Long getId() {
         return id;
     }
@@ -40,10 +44,11 @@ public class SomeProtectedClass1 {
         this.someOtherValue = someOtherValue;
     }
 
-    public SomeProtectedClass1(String someValue, String someOtherValue, Long id) {
+    public SomeProtectedClass1(String someValue, String someOtherValue, Long id, OtherProtectedClass otherProtectedClass) {
         this.someValue = someValue;
         this.someOtherValue = someOtherValue;
         this.id = id;
+        this.otherProtectedClass = otherProtectedClass;
     }
 
     public SomeProtectedClass1() {}
