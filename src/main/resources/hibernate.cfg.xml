@@ -21,8 +21,8 @@
     <mapping class="org.safety.library.models.HibernateSelect"></mapping>
     <mapping class="org.safety.library.models.UsersRole"></mapping>
     <mapping class="org.safety.library.models.AddPrivilege"></mapping>
-    <mapping class="protectedClass.SomeProtectedClass1"></mapping>
-    <mapping class="protectedClass.OtherProtectedClass"></mapping>
+    <mapping class="protectedClass.Car"></mapping>
+    <mapping class="protectedClass.Wheel"></mapping>
     <mapping class="unprotectedClass.UnprotectedClass"></mapping>
     <mapping class="users.TestUsers"></mapping>
   </session-factory>
