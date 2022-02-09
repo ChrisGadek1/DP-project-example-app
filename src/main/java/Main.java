@@ -3,39 +3,37 @@ import org.hibernate.Cache;
 import org.hibernate.Session;
 import org.safety.library.annotations.ACL;
 import org.safety.library.hibernate.SessionProvider;
-import org.safety.library.initializationModule.abstractMappingObjects.EntityAccess;
 import org.safety.library.initializationModule.utils.Authenticator;
 import org.safety.library.models.*;
-import protectedClass.OtherProtectedClass;
-import protectedClass.SomeProtectedClass1;
+import protectedClass.Wheel;
+import protectedClass.Car;
 import unprotectedClass.UnprotectedClass;
 import users.TestUsers;
 
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.util.List;
 
 public class Main {
 
     @ACL
-    public static List<SomeProtectedClass1> safeLySelectSomeProtectedClass1(){
-        return SessionProvider.getSession().createQuery("from SomeProtectedClass1 ").getResultList();
+    public static List<Car> safeLySelectCar() {
+        return SessionProvider.getSession().createQuery("from Car ").getResultList();
     }
 
     @ACL
-    public static List<OtherProtectedClass> safeLySelectOtherProtectedClass(){
-        return SessionProvider.getSession().createQuery("FROM OtherProtectedClass ").getResultList();
+    public static List<Wheel> safeLySelectWheel() {
+        return SessionProvider.getSession().createQuery("FROM Wheel ").getResultList();
     }
 
     @ACL
-    public static List<UnprotectedClass> safeLySelectUnprotectedClass(){
+    public static List<UnprotectedClass> safeLySelectUnprotectedClass() {
         return SessionProvider.getSession().createQuery("FROM UnprotectedClass ").getResultList();
     }
 
     @ACL
-    public static void safelyInsert(Object o){
-        if(!SessionProvider.getSession().getTransaction().isActive()){
+    public static void safelyInsert(Object o) {
+        if (!SessionProvider.getSession().getTransaction().isActive()) {
             SessionProvider.getSession().beginTransaction();
         }
         SessionProvider.getSession().save(o);
@@ -43,8 +41,8 @@ public class Main {
     }
 
     @ACL
-    public static void safelyUpdate(Object o){
-        if(!SessionProvider.getSession().getTransaction().isActive()){
+    public static void safelyUpdate(Object o) {
+        if (!SessionProvider.getSession().getTransaction().isActive()) {
             SessionProvider.getSession().beginTransaction();
         }
         SessionProvider.getSession().update(o);
@@ -52,8 +50,8 @@ public class Main {
     }
 
     @ACL
-    public static void safelyDelete(Object o){
-        if(!SessionProvider.getSession().getTransaction().isActive()){
+    public static void safelyDelete(Object o) {
+        if (!SessionProvider.getSession().getTransaction().isActive()) {
             SessionProvider.getSession().beginTransaction();
         }
         SessionProvider.getSession().delete(o);
@@ -61,9 +59,10 @@ public class Main {
     }
 
     public static void main(String args[]) throws Exception {
-        OtherProtectedClass otherProtectedClass = null;
+
+        // Session
         Session session = SessionProvider.getSession();
-        if(!SessionProvider.getSession().getTransaction().isActive()){
+        if (!SessionProvider.getSession().getTransaction().isActive()) {
             SessionProvider.getSession().beginTransaction();
         }
 
@@ -81,173 +80,152 @@ public class Main {
         session.save(admin);
         session.save(pracownik);
 
-        UsersRole tomekAdmin = new UsersRole(Math.toIntExact(tomek.getId()), admin);
-        UsersRole adaPracownik = new UsersRole(Math.toIntExact(ada.getId()), pracownik);
-        UsersRole kasiaPracownik = new UsersRole(Math.toIntExact(kasia.getId()), pracownik);
-
-        session.save(tomekAdmin);
-        session.save(adaPracownik);
-        session.save(kasiaPracownik);
-
-        AddPrivilege tomekAccess1 = new AddPrivilege(admin, "SomeProtectedClass1");
-        AddPrivilege tomekAccess2 = new AddPrivilege(admin, "OtherProtectedClass");
-
-        session.save(tomekAccess1);
-        session.save(tomekAccess2);
-
-        HibernateSelect table1 = new HibernateSelect("someprotec0_", "SomeProtectedClass1");
-        HibernateSelect table2 = new HibernateSelect("otherprote0_", "OtherProtectedClass");
+        // Connection User - Role
+        session.save(new UsersRole(Math.toIntExact(tomek.getId()), admin));
+        session.save(new UsersRole(Math.toIntExact(ada.getId()), pracownik));
+        session.save(new UsersRole(Math.toIntExact(kasia.getId()), pracownik));
 
         AccessListRow accessListRow = new AccessListRow(admin, 2, "SomeProtectedClass1", true, true, false);
-        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, false, true);
+        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, true, true);
 
-        session.save(accessListRow);
-        session.save(accessListRo2);
-
-
-
-        otherProtectedClass = new OtherProtectedClass("Some", "Value", (long) 2);
-        OtherProtectedClass otherProtectedClass1 = new OtherProtectedClass("[ACCESS DENIED]", "[ACCESS DENIED]", (long)1);
-
-        SomeProtectedClass1 someProtectedClass1 = new SomeProtectedClass1("Some", "ad", (long)2, otherProtectedClass);
-        SomeProtectedClass1 someProtectedClass11 = new SomeProtectedClass1("[ACCESS DENIED]", "[ACCESS DENIED]", (long)1, null);
-
-
-        session.save(someProtectedClass11);
-        session.save(otherProtectedClass1);
-        session.save(otherProtectedClass);
-        session.save(someProtectedClass1);
-
+        // Choose protected entities
+        HibernateSelect table1 = new HibernateSelect("strangeNameWheel", "Wheel");
+        HibernateSelect table2 = new HibernateSelect("strangeNameCar", "Car");
+        // By default, UnprotectedClass isn't protected
         session.save(table1);
         session.save(table2);
 
+        // Set who is able to insert data to protected entities
+        AddPrivilege tomekAccess1 = new AddPrivilege(admin, "Wheel");
+        AddPrivilege tomekAccess2 = new AddPrivilege(admin, "Car");
+        session.save(tomekAccess1);
+        session.save(tomekAccess2);
+
+        session.save(new Wheel((long)1, "ACCESS DENIED"));
+        session.save(new Car((long)1, "ACCESS DENIED", null));
+
+        Wheel wheel1 = new Wheel((long)2, "size-17");
+        session.save(wheel1);
+        session.save(new Car((long)2, "BMW", wheel1));
+
         session.getTransaction().commit();
 
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        boolean withAcl;
+        String operation;
 
-
-
-        while(true){
+        while (true) {
             SessionProvider.getSession().clear();
             Cache cache = SessionProvider.getSessionFactory().getCache();
-
+            // SessionProvider.getSessionWithoutInterceptor().clear();
             if (cache != null) {
                 cache.evictAllRegions(); // Evict data from all query regions.
             }
 
+            switchUser();
+            withAcl = ifUseAcl();
+            operation = chooseOperation();
+            Wheel wh;
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-            System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia)");
-            int userId = Integer.parseInt(reader.readLine());
-            Authenticator.getInstance().setUserId(userId);
-
-
-            System.out.println("Use ACL? (true/false)");
-            String string = reader.readLine();
-            boolean withAcl;
-            while(!string.equalsIgnoreCase("true") && !string.equalsIgnoreCase("false")) {
-                System.out.println("Popraw wartość: ");
-                string = reader.readLine();
-            }
-            withAcl = Boolean.parseBoolean(string);
-
-            System.out.println("Specify operation?: (INSERT, SELECT, UPDATE, DELETE)");
-            String operation = reader.readLine();
-            while(!operation.equalsIgnoreCase("insert") && !operation.equalsIgnoreCase("select")
-                && !operation.equalsIgnoreCase("update") && !operation.equalsIgnoreCase("delete")) {
-                System.out.println("Popraw wartość: ");
-                operation = reader.readLine();
-            }
-
-
-            System.out.println("Entity name: (1 - SomeProtectedClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass, 4 - AccessListRow)");
+            System.out.println("Entity name: (1 - Car, 2 - Wheel, 3 - UnprotectedClass, 4 - AccessListRow)");
             String entity = reader.readLine();
 
-            Object o = null;
-            if(operation.equalsIgnoreCase("insert")) {
+            Object obj = null;
+            if (operation.equalsIgnoreCase("insert")) {
                 while (true) {
+                    wh = null;
                     try {
                         if (entity.equalsIgnoreCase("1")) {
-                            System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue, int: OtherProtectedClass_ID)");
+                            System.out.println("Car (Long id, String brand)");
                             String data = reader.readLine();
-                            otherProtectedClass = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = "+data.split(" ")[3]).getResultList().get(0);
-                            o = new SomeProtectedClass1(
-                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]), otherProtectedClass);
+
+                            System.out.println("Do you want to provide new wheel");
+                            if (Boolean.parseBoolean(reader.readLine())) {
+                                System.out.println("Wheel (Long id, String name)");
+                                String dataWheel = reader.readLine();
+                                wh = new Wheel(Long.parseLong(dataWheel.split(" ")[0]), dataWheel.split(" ")[1]);
+                            } else {
+                                System.out.println("Provide existing wheel id");
+                                String dataWheel = reader.readLine();
+                                wh = (Wheel) SessionProvider.getSession().createQuery("FROM Wheel O WHERE O.id = " + dataWheel.split(" ")[0]).getResultList().get(0);
+                            }
+                            obj = new Car(Long.parseLong(data.split(" ")[0]), data.split(" ")[1], wh);
                         }
 
                         if (entity.equalsIgnoreCase("2")) {
-                            System.out.println("protectedClass.OtherProtectedClass (Long : id, String : someValue, String : someOtherValue)");
+                            System.out.println("Wheel (Long id, String name)");
                             String data = reader.readLine();
-                            o = new OtherProtectedClass(
-                                    data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                            obj = new Wheel(Long.parseLong(data.split(" ")[0]), data.split(" ")[1]);
                         }
 
                         if (entity.equalsIgnoreCase("3")) {
-                            System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
+                            System.out.println("UnprotectedClass (String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
-                            o = new UnprotectedClass(
+                            obj = new UnprotectedClass(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
                         }
                         if (entity.equalsIgnoreCase("4")) {
                             System.out.println("AccessList (String : role, int : protectedDataID, String : protectedTableName, Boolean: canRead, Boolean: canDelete, Boolean: canUpdate)");
                             String data = reader.readLine();
                             Role role = (Role) SessionProvider.getSession().createQuery("FROM Role R WHERE R.name = :name").setParameter("name", data.split(" ")[0]).getResultList().get(0);
-                            if((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
+                            if ((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
                                     !data.split(" ")[5].equalsIgnoreCase("true") && !data.split(" ")[5].equalsIgnoreCase("false") &&
                                     !data.split(" ")[6].equalsIgnoreCase("true") && !data.split(" ")[6].equalsIgnoreCase("false")) || (
-                                            !data.split(" ")[2].equals("SomeProtectedClass1") && data.split(" ")[2].equals("OtherProtectedClass"))){
+                                    !data.split(" ")[2].equals("Car") && data.split(" ")[2].equals("Wheel"))) {
                                 System.out.println("Try again!");
                                 continue;
                             }
-                            o = new AccessListRow(role, Integer.parseInt(data.split(" ")[1]), data.split(" ")[2], Boolean.parseBoolean(data.split(" ")[3]), Boolean.parseBoolean(data.split(" ")[4]), Boolean.parseBoolean(data.split(" ")[5]));
+                            obj = new AccessListRow(role, Integer.parseInt(data.split(" ")[1]), data.split(" ")[2], Boolean.parseBoolean(data.split(" ")[3]), Boolean.parseBoolean(data.split(" ")[4]), Boolean.parseBoolean(data.split(" ")[5]));
                         }
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         System.out.println("Try again!");
                         continue;
                     }
                     break;
                 }
 
-                if(withAcl){
+                if (withAcl) {
                     try {
-                        safelyInsert(o);
+                        if (wh != null) {
+                            safelyInsert(wh);
+                        }
+                        safelyInsert(obj);
                     } catch (RuntimeException e) {
                         e.printStackTrace();
                     }
-                }
-                else{
-                    if(!SessionProvider.getSession().getTransaction().isActive()){
+                } else {
+                    if (!SessionProvider.getSession().getTransaction().isActive()) {
                         SessionProvider.getSession().beginTransaction();
                     }
-                    SessionProvider.getSession().save(o);
+                    if (wh != null) {
+                        SessionProvider.getSession().save(wh);
+                    }
+                    SessionProvider.getSession().save(obj);
                     SessionProvider.getSession().getTransaction().commit();
                 }
-            } else if(operation.equalsIgnoreCase("select")) {
+            } else if (operation.equalsIgnoreCase("select")) {
                 if (entity.equalsIgnoreCase("1")) {
-                    List<SomeProtectedClass1> list = null;
-                    if(withAcl){
-                        list = safeLySelectSomeProtectedClass1();
-                   }
-                    else{
-                        list = SessionProvider.getSession().createQuery(" FROM SomeProtectedClass1 ").getResultList();
+                    List<Car> list = null;
+                    if (withAcl) {
+                        list = safeLySelectCar();
+                    } else {
+                        list = SessionProvider.getSession().createQuery(" FROM Car ").getResultList();
                     }
                     System.out.println("Found these records:");
-                    for(SomeProtectedClass1 some: list){
+                    for (Car some : list) {
                         System.out.println(some);
                     }
                 }
 
                 if (entity.equalsIgnoreCase("2")) {
-                    List<OtherProtectedClass> list = null;
-                    if(withAcl){
-                        list = safeLySelectOtherProtectedClass();
-                    }
-                    else{
-                        list = SessionProvider.getSession().createQuery(" FROM OtherProtectedClass ").getResultList();
+                    List<Wheel> list = null;
+                    if (withAcl) {
+                        list = safeLySelectWheel();
+                    } else {
+                        list = SessionProvider.getSession().createQuery(" FROM Wheel ").getResultList();
                     }
                     System.out.println("Found these records:");
-                    for(OtherProtectedClass some: list){
+                    for (Wheel some : list) {
                         System.out.println(some);
                     }
 
@@ -255,14 +233,13 @@ public class Main {
 
                 if (entity.equalsIgnoreCase("3")) {
                     List<UnprotectedClass> list = null;
-                    if(withAcl){
+                    if (withAcl) {
                         list = safeLySelectUnprotectedClass();
-                    }
-                    else{
+                    } else {
                         list = SessionProvider.getSession().createQuery(" FROM UnprotectedClass ").getResultList();
                     }
                     System.out.println("Found these records:");
-                    for(UnprotectedClass some: list){
+                    for (UnprotectedClass some : list) {
                         System.out.println(some);
                     }
                 }
@@ -273,73 +250,65 @@ public class Main {
                         System.out.println(some);
                     }
                 }
-            }
-            else if(operation.equalsIgnoreCase("update")){
+            } else if (operation.equalsIgnoreCase("update")) {
                 System.out.println("Choose ID of record to update");
                 String id = reader.readLine();
 
 
                 if (entity.equalsIgnoreCase("1")) {
-                    SomeProtectedClass1 s = (SomeProtectedClass1) SessionProvider.getSession().createQuery("FROM SomeProtectedClass1 S WHERE S.id = "+id).getResultList().get(0);
-                    System.out.println("protectedClass.SomeProtectedClass1 (String : someValue, String : someOtherValue, int:  OtherProtectedClassID)");
+                    Car c = (Car) SessionProvider.getSession().createQuery("FROM Car S WHERE S.id = " + id).getResultList().get(0);
+                    System.out.println("Car (String brand)");
                     String data = reader.readLine();
-                    OtherProtectedClass other = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = "+data.split(" ")[2]).getResultList().get(0);
-                    s.setSomeValue(data.split(" ")[0]);
-                    s.setSomeOtherValue(data.split(" ")[1]);
-                    s.setOtherProtectedClass(other);
-                    if(withAcl){
+                    c.setBrand(data);
+                    if (withAcl) {
                         try {
-                            safelyUpdate(s);
+                            safelyUpdate(c);
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
-                    }
-                    else{
-                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                    } else {
+                        if (!SessionProvider.getSession().getTransaction().isActive()) {
                             SessionProvider.getSession().beginTransaction();
                         }
-                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().update(c);
                         SessionProvider.getSession().getTransaction().commit();
                     }
                 }
 
                 if (entity.equalsIgnoreCase("2")) {
-                    OtherProtectedClass s = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass S WHERE S.id = "+id).getResultList().get(0);
-                    System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+                    System.out.println("Wheel (String name)");
                     String data = reader.readLine();
-                    s.setSomeValue(data.split(" ")[0]);
-                    s.setSomeOtherValue(data.split(" ")[1]);
-                    if(withAcl){
+                    Wheel w = (Wheel) SessionProvider.getSession().createQuery("FROM Wheel S WHERE S.id = " + id).getResultList().get(0);
+                    w.setName(data.split(" ")[1]);
+                    if (withAcl) {
                         try {
-                            safelyUpdate(s);
+                            safelyUpdate(w);
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
-                    }
-                    else{
-                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                    } else {
+                        if (!SessionProvider.getSession().getTransaction().isActive()) {
                             SessionProvider.getSession().beginTransaction();
                         }
-                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().update(w);
                         SessionProvider.getSession().getTransaction().commit();
                     }
                 }
 
                 if (entity.equalsIgnoreCase("3")) {
-                    UnprotectedClass s = (UnprotectedClass) SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = "+id).getResultList().get(0);
+                    UnprotectedClass s = (UnprotectedClass) SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = " + id).getResultList().get(0);
                     System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
                     String data = reader.readLine();
                     s.setSomeValue(data.split(" ")[0]);
                     s.setSomeValue(data.split(" ")[1]);
-                    if(withAcl){
+                    if (withAcl) {
                         try {
                             safelyUpdate(s);
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
-                    }
-                    else{
-                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                    } else {
+                        if (!SessionProvider.getSession().getTransaction().isActive()) {
                             SessionProvider.getSession().beginTransaction();
                         }
                         SessionProvider.getSession().update(s);
@@ -347,25 +316,24 @@ public class Main {
                     }
                 }
                 if (entity.equalsIgnoreCase("4")) {
-                    AccessListRow s = (AccessListRow) SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = "+id).getResultList().get(0);
+                    AccessListRow s = (AccessListRow) SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = " + id).getResultList().get(0);
                     Role role = null;
                     String data = null;
-                    while (true){
+                    while (true) {
                         System.out.println("AccessList (String : role, int : protectedDataID, String : protectedTableName, Boolean: canRead, Boolean: canDelete, Boolean: canUpdate)");
                         data = reader.readLine();
 
-                        try{
+                        try {
                             role = (Role) SessionProvider.getSession().createQuery("FROM Role R WHERE R.name = :name").setParameter("name", data.split(" ")[0]).getResultList().get(0);
-                        }
-                        catch (Exception e){
+                        } catch (Exception e) {
                             System.out.println("Try Again!");
                             continue;
                         }
 
-                        if((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
+                        if ((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
                                 !data.split(" ")[5].equalsIgnoreCase("true") && !data.split(" ")[5].equalsIgnoreCase("false") &&
                                 !data.split(" ")[6].equalsIgnoreCase("true") && !data.split(" ")[6].equalsIgnoreCase("false")) || (
-                                !data.split(" ")[2].equals("SomeProtectedClass1") && !data.split(" ")[2].equals("OtherProtectedClass"))){
+                                !data.split(" ")[2].equals("Car") && !data.split(" ")[2].equals("Wheel"))) {
                             System.out.println("Try again!");
                             continue;
                         }
@@ -377,56 +345,108 @@ public class Main {
                     s.setCanRead(Boolean.parseBoolean(data.split(" ")[3]));
                     s.setCanDelete(Boolean.parseBoolean(data.split(" ")[4]));
                     s.setCanUpdate(Boolean.parseBoolean(data.split(" ")[5]));
-                    if(withAcl){
+                    if (withAcl) {
                         try {
                             safelyUpdate(s);
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
-                    }
-                    else{
-                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                    } else {
+                        if (!SessionProvider.getSession().getTransaction().isActive()) {
                             SessionProvider.getSession().beginTransaction();
                         }
                         SessionProvider.getSession().update(s);
                         SessionProvider.getSession().getTransaction().commit();
                     }
                 }
-            }
-            else if(operation.equalsIgnoreCase("delete")){
+            } else if (operation.equalsIgnoreCase("delete")) {
                 System.out.println("Choose ID of record to delete");
                 String id = reader.readLine();
 
                 if (entity.equalsIgnoreCase("1")) {
-                    o =  SessionProvider.getSession().createQuery("FROM SomeProtectedClass1 S WHERE S.id = "+id).getResultList().get(0);
+                    obj = SessionProvider.getSession().createQuery("FROM Car S WHERE S.id = " + id).getResultList().get(0);
                 }
 
                 if (entity.equalsIgnoreCase("2")) {
-                    o = SessionProvider.getSession().createQuery("FROM OtherProtectedClass S WHERE S.id = "+id).getResultList().get(0);
+                    obj = SessionProvider.getSession().createQuery("FROM Wheel S WHERE S.id = " + id).getResultList().get(0);
                 }
 
                 if (entity.equalsIgnoreCase("3")) {
-                    o = SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = "+id).getResultList().get(0);
+                    obj = SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = " + id).getResultList().get(0);
                 }
                 if (entity.equalsIgnoreCase("4")) {
-                    o = SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = "+id).getResultList().get(0);
+                    obj = SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = " + id).getResultList().get(0);
                 }
 
-                if(withAcl){
+                if (withAcl) {
                     try {
-                        safelyDelete(o);
+                        safelyDelete(obj);
                     } catch (RuntimeException e) {
                         e.printStackTrace();
                     }
-                }
-                else{
-                    if(!SessionProvider.getSession().getTransaction().isActive()){
+                } else {
+                    if (!SessionProvider.getSession().getTransaction().isActive()) {
                         SessionProvider.getSession().beginTransaction();
                     }
-                    SessionProvider.getSession().delete(o);
+                    SessionProvider.getSession().delete(obj);
                     SessionProvider.getSession().getTransaction().commit();
                 }
             }
         }
+    }
+
+
+    public static void switchUser() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia)");
+        int userId = 0;
+        try {
+            userId = Integer.parseInt(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Authenticator.getInstance().setUserId(userId);
+    }
+
+    public static boolean ifUseAcl() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("Use ACL? (true/false)");
+        String string = null;
+        try {
+            string = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        while (!string.equalsIgnoreCase("true") && !string.equalsIgnoreCase("false")) {
+            System.out.println("Popraw wartość: ");
+            try {
+                string = reader.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return Boolean.parseBoolean(string);
+    }
+
+    public static String chooseOperation() {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.println("Specify operation?: (INSERT, SELECT, UPDATE, DELETE)");
+        String operation = null;
+        try {
+            operation = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        while (!operation.equalsIgnoreCase("insert") && !operation.equalsIgnoreCase("select")
+                && !operation.equalsIgnoreCase("update") && !operation.equalsIgnoreCase("delete")) {
+            System.out.println("Popraw wartość: ");
+            try {
+                operation = reader.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return operation;
     }
 }
