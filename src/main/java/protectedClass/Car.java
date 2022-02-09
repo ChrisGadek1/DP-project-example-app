@@ -1,8 +1,11 @@
 package protectedClass;
 
+import org.safety.library.annotations.ProtectedData;
+
 import javax.persistence.*;
 
 @Entity
+@ProtectedData(jsonPath = "")
 public class Car {
     @Id
     @Column(name = "id", nullable = false)

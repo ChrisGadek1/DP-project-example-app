@@ -12,8 +12,8 @@
 
     <!-- DB schema will be updated if needed -->
     <property name="hibernate.hbm2ddl.auto">create-drop</property>
-    <property name="show_sql">true</property>
-    <property name="format_sql">true</property>
+    <property name="show_sql">false</property>
+    <property name="format_sql">false</property>
     <mapping class="org.safety.library.models.DefaultPrivilige"></mapping>
     <mapping class="org.safety.library.models.TestModel"></mapping>
     <mapping class="org.safety.library.models.Role"></mapping>

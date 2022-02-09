@@ -12,6 +12,8 @@ import users.TestUsers;
 
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Main {
@@ -77,16 +79,28 @@ public class Main {
         Role admin = new Role("admin");
         Role pracownik = new Role("pracownik");
 
+        DefaultPrivilige defaultPrivilige1 = new DefaultPrivilige(admin, "Car", true, true, false);
+        DefaultPrivilige defaultPrivilige2 = new DefaultPrivilige(pracownik, "Car", true, false, false);
+        DefaultPrivilige defaultPrivilige3 = new DefaultPrivilige(admin, "Wheel", true, true, true);
+        DefaultPrivilige defaultPrivilige4 = new DefaultPrivilige(pracownik, "Wheel", false, false, false);
+
+        admin.setDefaultPriviliges(new LinkedList<>(Arrays.asList(defaultPrivilige1, defaultPrivilige3)));
+        pracownik.setDefaultPriviliges(new LinkedList<>(Arrays.asList(defaultPrivilige2, defaultPrivilige4)));
+
         session.save(admin);
         session.save(pracownik);
+
+        session.save(defaultPrivilige1);
+        session.save(defaultPrivilige2);
+        session.save(defaultPrivilige3);
+        session.save(defaultPrivilige4);
+
+
 
         // Connection User - Role
         session.save(new UsersRole(Math.toIntExact(tomek.getId()), admin));
         session.save(new UsersRole(Math.toIntExact(ada.getId()), pracownik));
         session.save(new UsersRole(Math.toIntExact(kasia.getId()), pracownik));
-
-        AccessListRow accessListRow = new AccessListRow(admin, 2, "SomeProtectedClass1", true, true, false);
-        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, true, true);
 
         // Choose protected entities
         HibernateSelect table1 = new HibernateSelect("strangeNameWheel", "Wheel");
@@ -98,11 +112,15 @@ public class Main {
         // Set who is able to insert data to protected entities
         AddPrivilege tomekAccess1 = new AddPrivilege(admin, "Wheel");
         AddPrivilege tomekAccess2 = new AddPrivilege(admin, "Car");
+        AddPrivilege kasiaAccess = new AddPrivilege(pracownik, "Car");
+
+
+        session.save(kasiaAccess);
         session.save(tomekAccess1);
         session.save(tomekAccess2);
 
-        session.save(new Wheel((long)1, "ACCESS DENIED"));
-        session.save(new Car((long)1, "ACCESS DENIED", null));
+        session.save(new Wheel((long)1, "[ACCESS DENIED]"));
+        session.save(new Car((long)1, "[ACCESS DENIED]", null));
 
         Wheel wheel1 = new Wheel((long)2, "size-17");
         session.save(wheel1);
@@ -114,21 +132,42 @@ public class Main {
         boolean withAcl;
         String operation;
 
+        outer:
         while (true) {
             SessionProvider.getSession().clear();
             Cache cache = SessionProvider.getSessionFactory().getCache();
-            // SessionProvider.getSessionWithoutInterceptor().clear();
             if (cache != null) {
                 cache.evictAllRegions(); // Evict data from all query regions.
             }
 
             switchUser();
-            withAcl = ifUseAcl();
+            String withAclResult = ifUseAcl();
+            if(withAclResult.trim().equals("-1")){
+                continue;
+            }
+            withAcl = Boolean.parseBoolean(withAclResult);
+
             operation = chooseOperation();
+            if(operation.trim().equals("-1")){
+                continue;
+            }
             Wheel wh;
 
-            System.out.println("Entity name: (1 - Car, 2 - Wheel, 3 - UnprotectedClass, 4 - AccessListRow)");
-            String entity = reader.readLine();
+            String entity = "";
+            while(true){
+                System.out.println("Entity name: (1 - Car, 2 - Wheel, 3 - UnprotectedClass, 4 - AccessListRow, -1 - cancel)");
+                entity = reader.readLine();
+                if(!entity.trim().equals("1") && !entity.trim().equals("2") && !entity.trim().equals("3") && !entity.trim().equals("4") && !entity.trim().equals("-1")){
+                    System.out.println("Wrong Input! Try Again");
+                    continue;
+                }
+                break;
+            }
+
+            if(entity.trim().equals("-1")){
+                continue;
+            }
+
 
             Object obj = null;
             if (operation.equalsIgnoreCase("insert")) {
@@ -159,7 +198,7 @@ public class Main {
                         }
 
                         if (entity.equalsIgnoreCase("3")) {
-                            System.out.println("UnprotectedClass (String : someValue, String : someOtherValue)");
+                            System.out.println("UnprotectedClass (Long : id, String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
                             obj = new UnprotectedClass(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
@@ -171,7 +210,7 @@ public class Main {
                             if ((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
                                     !data.split(" ")[5].equalsIgnoreCase("true") && !data.split(" ")[5].equalsIgnoreCase("false") &&
                                     !data.split(" ")[6].equalsIgnoreCase("true") && !data.split(" ")[6].equalsIgnoreCase("false")) || (
-                                    !data.split(" ")[2].equals("Car") && data.split(" ")[2].equals("Wheel"))) {
+                                    !data.split(" ")[2].equals("Car") && !data.split(" ")[2].equals("Wheel"))) {
                                 System.out.println("Try again!");
                                 continue;
                             }
@@ -212,7 +251,7 @@ public class Main {
                         list = SessionProvider.getSession().createQuery(" FROM Car ").getResultList();
                     }
                     System.out.println("Found these records:");
-                    for (Car some : list) {
+                    for (Car some : list.stream().filter(e -> e.getId() != 1).toList()) {
                         System.out.println(some);
                     }
                 }
@@ -279,7 +318,7 @@ public class Main {
                     System.out.println("Wheel (String name)");
                     String data = reader.readLine();
                     Wheel w = (Wheel) SessionProvider.getSession().createQuery("FROM Wheel S WHERE S.id = " + id).getResultList().get(0);
-                    w.setName(data.split(" ")[1]);
+                    w.setName(data.split(" ")[0]);
                     if (withAcl) {
                         try {
                             safelyUpdate(w);
@@ -396,21 +435,31 @@ public class Main {
     }
 
 
-    public static void switchUser() {
+    public static void switchUser() throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia)");
         int userId = 0;
-        try {
-            userId = Integer.parseInt(reader.readLine());
-        } catch (IOException e) {
-            e.printStackTrace();
+        System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia, -1 - exit)");
+        String data = reader.readLine();
+        while(true){
+            if(data.trim().equals("-1")){
+                System.exit(0);
+            }
+            try {
+                userId = Integer.parseInt(data);
+            } catch (Exception e) {
+                System.out.println("Wrong input, try again");
+                System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia, -1 - exit)");
+                data = reader.readLine();
+                continue;
+            }
+            break;
         }
         Authenticator.getInstance().setUserId(userId);
     }
 
-    public static boolean ifUseAcl() {
+    public static String ifUseAcl() {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Use ACL? (true/false)");
+        System.out.println("Use ACL? (true/false), -1 - cancel");
         String string = null;
         try {
             string = reader.readLine();
@@ -418,7 +467,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        while (!string.equalsIgnoreCase("true") && !string.equalsIgnoreCase("false")) {
+        while (!string.equalsIgnoreCase("true") && !string.equalsIgnoreCase("false") && !string.trim().equalsIgnoreCase("-1")) {
             System.out.println("Popraw wartość: ");
             try {
                 string = reader.readLine();
@@ -426,12 +475,12 @@ public class Main {
                 e.printStackTrace();
             }
         }
-        return Boolean.parseBoolean(string);
+        return string;
     }
 
     public static String chooseOperation() {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        System.out.println("Specify operation?: (INSERT, SELECT, UPDATE, DELETE)");
+        System.out.println("Specify operation?: (INSERT, SELECT, UPDATE, DELETE), -1 - cancel");
         String operation = null;
         try {
             operation = reader.readLine();
@@ -439,7 +488,8 @@ public class Main {
             e.printStackTrace();
         }
         while (!operation.equalsIgnoreCase("insert") && !operation.equalsIgnoreCase("select")
-                && !operation.equalsIgnoreCase("update") && !operation.equalsIgnoreCase("delete")) {
+                && !operation.equalsIgnoreCase("update") && !operation.equalsIgnoreCase("delete")
+                && !operation.trim().equalsIgnoreCase("-1")) {
             System.out.println("Popraw wartość: ");
             try {
                 operation = reader.readLine();
