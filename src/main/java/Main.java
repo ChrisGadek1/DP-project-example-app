@@ -99,7 +99,7 @@ public class Main {
         HibernateSelect table2 = new HibernateSelect("otherprote0_", "OtherProtectedClass");
 
         AccessListRow accessListRow = new AccessListRow(admin, 2, "SomeProtectedClass1", true, true, false);
-        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, true, true);
+        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, false, true);
 
         session.save(accessListRow);
         session.save(accessListRo2);
@@ -168,17 +168,15 @@ public class Main {
                 while (true) {
                     try {
                         if (entity.equalsIgnoreCase("1")) {
-                            System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue)");
+                            System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue, int: OtherProtectedClass_ID)");
                             String data = reader.readLine();
-                            if(otherProtectedClass == null){
-                                otherProtectedClass = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = 1").getResultList().get(0);
-                            }
+                            otherProtectedClass = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = "+data.split(" ")[3]).getResultList().get(0);
                             o = new SomeProtectedClass1(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]), otherProtectedClass);
                         }
 
                         if (entity.equalsIgnoreCase("2")) {
-                            System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+                            System.out.println("protectedClass.OtherProtectedClass (Long : id, String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
                             o = new OtherProtectedClass(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
