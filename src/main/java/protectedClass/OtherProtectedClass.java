@@ -48,7 +48,7 @@ public class OtherProtectedClass {
 
     @Override
     public String toString() {
-        return "SomeProtectedClass2{" +
+        return "OtherProtectedClass{" +
                 "id=" + id +
                 ", someValue='" + someValue + '\'' +
                 ", someOtherValue='" + someOtherValue + '\'' +

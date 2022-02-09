@@ -1,13 +1,11 @@
 
+import org.hibernate.Cache;
 import org.hibernate.Session;
 import org.safety.library.annotations.ACL;
 import org.safety.library.hibernate.SessionProvider;
 import org.safety.library.initializationModule.abstractMappingObjects.EntityAccess;
 import org.safety.library.initializationModule.utils.Authenticator;
-import org.safety.library.models.AddPrivilege;
-import org.safety.library.models.HibernateSelect;
-import org.safety.library.models.Role;
-import org.safety.library.models.UsersRole;
+import org.safety.library.models.*;
 import protectedClass.OtherProtectedClass;
 import protectedClass.SomeProtectedClass1;
 import unprotectedClass.UnprotectedClass;
@@ -22,12 +20,17 @@ public class Main {
 
     @ACL
     public static List<SomeProtectedClass1> safeLySelectSomeProtectedClass1(){
-        return SessionProvider.getSession().createQuery("FROM SomeProtectedClass1").getResultList();
+        return SessionProvider.getSession().createQuery("from SomeProtectedClass1 ").getResultList();
     }
 
     @ACL
-    public static List<SomeProtectedClass1> safeLySelectSomeProtectedClass2(){
-        return SessionProvider.getSession().createQuery("FROM SomeProtectedClass1").getResultList();
+    public static List<OtherProtectedClass> safeLySelectOtherProtectedClass(){
+        return SessionProvider.getSession().createQuery("FROM OtherProtectedClass ").getResultList();
+    }
+
+    @ACL
+    public static List<UnprotectedClass> safeLySelectUnprotectedClass(){
+        return SessionProvider.getSession().createQuery("FROM UnprotectedClass ").getResultList();
     }
 
     @ACL
@@ -57,13 +60,8 @@ public class Main {
         SessionProvider.getSession().getTransaction().commit();
     }
 
-    @ACL
-    public static List<SomeProtectedClass1> selectJoin1() {
-       return SessionProvider.getSession().createQuery("select s from SomeProtectedClass1 s inner join s.someOtherValue").getResultList();
-    }
-
-
     public static void main(String args[]) throws Exception {
+        OtherProtectedClass otherProtectedClass = null;
         Session session = SessionProvider.getSession();
         if(!SessionProvider.getSession().getTransaction().isActive()){
             SessionProvider.getSession().beginTransaction();
@@ -100,8 +98,25 @@ public class Main {
         HibernateSelect table1 = new HibernateSelect("someprotec0_", "SomeProtectedClass1");
         HibernateSelect table2 = new HibernateSelect("otherprote0_", "OtherProtectedClass");
 
-        OtherProtectedClass otherProtectedClass = new OtherProtectedClass("Some", "Value", (long) 1);
+        AccessListRow accessListRow = new AccessListRow(admin, 2, "SomeProtectedClass1", true, true, false);
+        AccessListRow accessListRo2 = new AccessListRow(admin, 2, "OtherProtectedClass", false, true, true);
+
+        session.save(accessListRow);
+        session.save(accessListRo2);
+
+
+
+        otherProtectedClass = new OtherProtectedClass("Some", "Value", (long) 2);
+        OtherProtectedClass otherProtectedClass1 = new OtherProtectedClass("[ACCESS DENIED]", "[ACCESS DENIED]", (long)1);
+
+        SomeProtectedClass1 someProtectedClass1 = new SomeProtectedClass1("Some", "ad", (long)2, otherProtectedClass);
+        SomeProtectedClass1 someProtectedClass11 = new SomeProtectedClass1("[ACCESS DENIED]", "[ACCESS DENIED]", (long)1, null);
+
+
+        session.save(someProtectedClass11);
+        session.save(otherProtectedClass1);
         session.save(otherProtectedClass);
+        session.save(someProtectedClass1);
 
         session.save(table1);
         session.save(table2);
@@ -109,7 +124,17 @@ public class Main {
         session.getTransaction().commit();
 
 
+
+
         while(true){
+            SessionProvider.getSession().clear();
+            Cache cache = SessionProvider.getSessionFactory().getCache();
+
+            if (cache != null) {
+                cache.evictAllRegions(); // Evict data from all query regions.
+            }
+
+
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
             System.out.println("Select User ID (1 - tomek, 2 - ada, 3 - kasia)");
@@ -135,7 +160,7 @@ public class Main {
             }
 
 
-            System.out.println("Entity name: (1 - SomeProtectedClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass)");
+            System.out.println("Entity name: (1 - SomeProtectedClass1, 2 - OtherProtectedClass, 3 - UnprotectedClass, 4 - AccessListRow)");
             String entity = reader.readLine();
 
             Object o = null;
@@ -145,6 +170,9 @@ public class Main {
                         if (entity.equalsIgnoreCase("1")) {
                             System.out.println("protectedClass.SomeProtectedClass1 (Long : id, String : someValue, String : someOtherValue)");
                             String data = reader.readLine();
+                            if(otherProtectedClass == null){
+                                otherProtectedClass = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = 1").getResultList().get(0);
+                            }
                             o = new SomeProtectedClass1(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]), otherProtectedClass);
                         }
@@ -161,6 +189,19 @@ public class Main {
                             String data = reader.readLine();
                             o = new UnprotectedClass(
                                     data.split(" ")[1], data.split(" ")[2], Long.parseLong(data.split(" ")[0]));
+                        }
+                        if (entity.equalsIgnoreCase("4")) {
+                            System.out.println("AccessList (String : role, int : protectedDataID, String : protectedTableName, Boolean: canRead, Boolean: canDelete, Boolean: canUpdate)");
+                            String data = reader.readLine();
+                            Role role = (Role) SessionProvider.getSession().createQuery("FROM Role R WHERE R.name = :name").setParameter("name", data.split(" ")[0]).getResultList().get(0);
+                            if((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
+                                    !data.split(" ")[5].equalsIgnoreCase("true") && !data.split(" ")[5].equalsIgnoreCase("false") &&
+                                    !data.split(" ")[6].equalsIgnoreCase("true") && !data.split(" ")[6].equalsIgnoreCase("false")) || (
+                                            !data.split(" ")[2].equals("SomeProtectedClass1") && data.split(" ")[2].equals("OtherProtectedClass"))){
+                                System.out.println("Try again!");
+                                continue;
+                            }
+                            o = new AccessListRow(role, Integer.parseInt(data.split(" ")[1]), data.split(" ")[2], Boolean.parseBoolean(data.split(" ")[3]), Boolean.parseBoolean(data.split(" ")[4]), Boolean.parseBoolean(data.split(" ")[5]));
                         }
                     }
                     catch (Exception e){
@@ -185,27 +226,197 @@ public class Main {
                     SessionProvider.getSession().getTransaction().commit();
                 }
             } else if(operation.equalsIgnoreCase("select")) {
+                if (entity.equalsIgnoreCase("1")) {
+                    List<SomeProtectedClass1> list = null;
+                    if(withAcl){
+                        list = safeLySelectSomeProtectedClass1();
+                   }
+                    else{
+                        list = SessionProvider.getSession().createQuery(" FROM SomeProtectedClass1 ").getResultList();
+                    }
+                    System.out.println("Found these records:");
+                    for(SomeProtectedClass1 some: list){
+                        System.out.println(some);
+                    }
+                }
 
-                    if (entity.equalsIgnoreCase("1")) {
-                       List<SomeProtectedClass1> list = selectJoin1();
+                if (entity.equalsIgnoreCase("2")) {
+                    List<OtherProtectedClass> list = null;
+                    if(withAcl){
+                        list = safeLySelectOtherProtectedClass();
+                    }
+                    else{
+                        list = SessionProvider.getSession().createQuery(" FROM OtherProtectedClass ").getResultList();
+                    }
+                    System.out.println("Found these records:");
+                    for(OtherProtectedClass some: list){
+                        System.out.println(some);
                     }
 
-                    if (entity.equalsIgnoreCase("2")) {
-                        System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+                }
 
+                if (entity.equalsIgnoreCase("3")) {
+                    List<UnprotectedClass> list = null;
+                    if(withAcl){
+                        list = safeLySelectUnprotectedClass();
                     }
-
-                    if (entity.equalsIgnoreCase("3")) {
-                        System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
-                        String data = reader.readLine();
-
+                    else{
+                        list = SessionProvider.getSession().createQuery(" FROM UnprotectedClass ").getResultList();
                     }
+                    System.out.println("Found these records:");
+                    for(UnprotectedClass some: list){
+                        System.out.println(some);
+                    }
+                }
+                if (entity.equalsIgnoreCase("4")) {
+                    List<AccessListRow> list = SessionProvider.getSession().createQuery("FROM AccessListRow ").getResultList();
+                    System.out.println("Found these records:");
+                    for (AccessListRow some : list) {
+                        System.out.println(some);
+                    }
+                }
+            }
+            else if(operation.equalsIgnoreCase("update")){
+                System.out.println("Choose ID of record to update");
+                String id = reader.readLine();
 
 
+                if (entity.equalsIgnoreCase("1")) {
+                    SomeProtectedClass1 s = (SomeProtectedClass1) SessionProvider.getSession().createQuery("FROM SomeProtectedClass1 S WHERE S.id = "+id).getResultList().get(0);
+                    System.out.println("protectedClass.SomeProtectedClass1 (String : someValue, String : someOtherValue, int:  OtherProtectedClassID)");
+                    String data = reader.readLine();
+                    OtherProtectedClass other = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass O WHERE O.id = "+data.split(" ")[2]).getResultList().get(0);
+                    s.setSomeValue(data.split(" ")[0]);
+                    s.setSomeOtherValue(data.split(" ")[1]);
+                    s.setOtherProtectedClass(other);
+                    if(withAcl){
+                        try {
+                            safelyUpdate(s);
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else{
+                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                            SessionProvider.getSession().beginTransaction();
+                        }
+                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().getTransaction().commit();
+                    }
+                }
+
+                if (entity.equalsIgnoreCase("2")) {
+                    OtherProtectedClass s = (OtherProtectedClass) SessionProvider.getSession().createQuery("FROM OtherProtectedClass S WHERE S.id = "+id).getResultList().get(0);
+                    System.out.println("protectedClass.OtherProtectedClass (String : someValue, String : someOtherValue)");
+                    String data = reader.readLine();
+                    s.setSomeValue(data.split(" ")[0]);
+                    s.setSomeOtherValue(data.split(" ")[1]);
+                    if(withAcl){
+                        try {
+                            safelyUpdate(s);
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else{
+                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                            SessionProvider.getSession().beginTransaction();
+                        }
+                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().getTransaction().commit();
+                    }
+                }
+
+                if (entity.equalsIgnoreCase("3")) {
+                    UnprotectedClass s = (UnprotectedClass) SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = "+id).getResultList().get(0);
+                    System.out.println("unprotectedClass.UnprotectedClass (String : someValue, String : someOtherValue)");
+                    String data = reader.readLine();
+                    s.setSomeValue(data.split(" ")[0]);
+                    s.setSomeValue(data.split(" ")[1]);
+                    if(withAcl){
+                        try {
+                            safelyUpdate(s);
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else{
+                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                            SessionProvider.getSession().beginTransaction();
+                        }
+                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().getTransaction().commit();
+                    }
+                }
+                if (entity.equalsIgnoreCase("4")) {
+                    AccessListRow s = (AccessListRow) SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = "+id).getResultList().get(0);
+                    Role role = null;
+                    String data = null;
+                    while (true){
+                        System.out.println("AccessList (String : role, int : protectedDataID, String : protectedTableName, Boolean: canRead, Boolean: canDelete, Boolean: canUpdate)");
+                        data = reader.readLine();
+
+                        try{
+                            role = (Role) SessionProvider.getSession().createQuery("FROM Role R WHERE R.name = :name").setParameter("name", data.split(" ")[0]).getResultList().get(0);
+                        }
+                        catch (Exception e){
+                            System.out.println("Try Again!");
+                            continue;
+                        }
+
+                        if((!data.split(" ")[4].equalsIgnoreCase("true") && !data.split(" ")[4].equalsIgnoreCase("false") &&
+                                !data.split(" ")[5].equalsIgnoreCase("true") && !data.split(" ")[5].equalsIgnoreCase("false") &&
+                                !data.split(" ")[6].equalsIgnoreCase("true") && !data.split(" ")[6].equalsIgnoreCase("false")) || (
+                                !data.split(" ")[2].equals("SomeProtectedClass1") && !data.split(" ")[2].equals("OtherProtectedClass"))){
+                            System.out.println("Try again!");
+                            continue;
+                        }
+                        break;
+                    }
+                    s.setRole(role);
+                    s.setProtectedDataId(Integer.parseInt(data.split(" ")[1]));
+                    s.setTableName(data.split(" ")[2]);
+                    s.setCanRead(Boolean.parseBoolean(data.split(" ")[3]));
+                    s.setCanDelete(Boolean.parseBoolean(data.split(" ")[4]));
+                    s.setCanUpdate(Boolean.parseBoolean(data.split(" ")[5]));
+                    if(withAcl){
+                        try {
+                            safelyUpdate(s);
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else{
+                        if(!SessionProvider.getSession().getTransaction().isActive()){
+                            SessionProvider.getSession().beginTransaction();
+                        }
+                        SessionProvider.getSession().update(s);
+                        SessionProvider.getSession().getTransaction().commit();
+                    }
+                }
+            }
+            else if(operation.equalsIgnoreCase("delete")){
+                System.out.println("Choose ID of record to delete");
+                String id = reader.readLine();
+
+                if (entity.equalsIgnoreCase("1")) {
+                    o =  SessionProvider.getSession().createQuery("FROM SomeProtectedClass1 S WHERE S.id = "+id).getResultList().get(0);
+                }
+
+                if (entity.equalsIgnoreCase("2")) {
+                    o = SessionProvider.getSession().createQuery("FROM OtherProtectedClass S WHERE S.id = "+id).getResultList().get(0);
+                }
+
+                if (entity.equalsIgnoreCase("3")) {
+                    o = SessionProvider.getSession().createQuery("FROM UnprotectedClass S WHERE S.id = "+id).getResultList().get(0);
+                }
+                if (entity.equalsIgnoreCase("4")) {
+                    o = SessionProvider.getSession().createQuery("FROM AccessListRow S WHERE S.id = "+id).getResultList().get(0);
+                }
 
                 if(withAcl){
                     try {
-                        safelyInsert(o);
+                        safelyDelete(o);
                     } catch (RuntimeException e) {
                         e.printStackTrace();
                     }
@@ -214,13 +425,10 @@ public class Main {
                     if(!SessionProvider.getSession().getTransaction().isActive()){
                         SessionProvider.getSession().beginTransaction();
                     }
-                    SessionProvider.getSession().save(o);
+                    SessionProvider.getSession().delete(o);
                     SessionProvider.getSession().getTransaction().commit();
                 }
             }
-
-            System.out.println();
-
         }
     }
 }

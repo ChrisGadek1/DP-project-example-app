@@ -13,8 +13,8 @@ public class SomeProtectedClass1 {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "ID_other", nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ID_other")
     private OtherProtectedClass otherProtectedClass;
 
     public Long getId() {
@@ -59,6 +59,15 @@ public class SomeProtectedClass1 {
                 "id=" + id +
                 ", someValue='" + someValue + '\'' +
                 ", someOtherValue='" + someOtherValue + '\'' +
+                ", otherProtectedClass="+ otherProtectedClass +
                 '}';
+    }
+
+    public OtherProtectedClass getOtherProtectedClass() {
+        return otherProtectedClass;
+    }
+
+    public void setOtherProtectedClass(OtherProtectedClass otherProtectedClass) {
+        this.otherProtectedClass = otherProtectedClass;
     }
 }
