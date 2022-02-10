@@ -252,7 +252,7 @@ public class Main {
                         list = SessionProvider.getSession().createQuery(" FROM Car ").getResultList();
                     }
                     System.out.println("Found these records:");
-                    for (Car some : list.stream().filter(e -> e.getId() != 1).toList()) {
+                    for (Car some : list) {
                         System.out.println(some);
                     }
                 }
