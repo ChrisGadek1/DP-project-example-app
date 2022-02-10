@@ -1,5 +1,7 @@
 package protectedClass;
 
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.safety.library.annotations.ProtectedData;
 
 import javax.persistence.*;
@@ -16,7 +18,8 @@ public class Car {
     }
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "ID_wheel")
+    @JoinColumn(name = "wheel_id")
+    @NotFound(action = NotFoundAction.IGNORE)
     private Wheel wheel;
 
     private String brand;

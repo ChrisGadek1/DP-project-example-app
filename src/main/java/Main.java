@@ -20,6 +20,7 @@ public class Main {
 
     @ACL
     public static List<Car> safeLySelectCar() {
+
         return SessionProvider.getSession().createQuery("from Car ").getResultList();
     }
 
@@ -119,12 +120,12 @@ public class Main {
         session.save(tomekAccess1);
         session.save(tomekAccess2);
 
-        session.save(new Wheel((long)1, "[ACCESS DENIED]"));
-        session.save(new Car((long)1, "[ACCESS DENIED]", null));
+        Wheel wheel1 = new Wheel((long)1, "size-17");
+        AccessListRow accessListRow = new AccessListRow(admin, 1, "Car", true, true, true);
 
-        Wheel wheel1 = new Wheel((long)2, "size-17");
+        session.save(accessListRow);
         session.save(wheel1);
-        session.save(new Car((long)2, "BMW", wheel1));
+        session.save(new Car((long)1, "BMW", wheel1));
 
         session.getTransaction().commit();
 
